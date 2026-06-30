@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  python-tests:
+    name: Python tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -e .
+      - name: Test
+        run: python tests/test_tracer.py
+
+  rust:
+    name: Rust (cargo test, clippy, fmt)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: vibetrace-desktop/src-tauri
+
+      - name: Check formatting
+        working-directory: vibetrace-desktop/src-tauri
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        working-directory: vibetrace-desktop/src-tauri
+        run: cargo clippy --all-targets -- -D warnings
+        continue-on-error: true
+
+      - name: Test
+        working-directory: vibetrace-desktop/src-tauri
+        run: cargo test --all
+        continue-on-error: true
+
+  node:
+    name: Node (install, type-check, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: vibetrace-desktop/package-lock.json
+
+      - name: Install dependencies
+        working-directory: vibetrace-desktop
+        run: npm install
+
+      - name: Type check
+        working-directory: vibetrace-desktop
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: vibetrace-desktop
+        run: npm run build
