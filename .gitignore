@@ -46,3 +46,8 @@ src-tauri/gen/
 vibetrace.db
 vibetrace.db-wal
 vibetrace.db-shm
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
