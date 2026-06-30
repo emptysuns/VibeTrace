@@ -1,37 +1,68 @@
 import { useEffect, useState, useCallback } from "react";
+import type { Icon } from "@phosphor-icons/react";
+import {
+  Play,
+  Stop,
+  Cpu,
+  Wrench,
+  Lightbulb,
+  BookOpen,
+  PencilSimple,
+  Path,
+  XCircle,
+  ArrowClockwise,
+  User,
+  Dot,
+  Timer,
+  TreeStructure,
+  Brain,
+  PaintBrush,
+  Plug,
+  Trash,
+  Coins,
+  Clock,
+  Hash,
+  ChartBar,
+  Waveform,
+  Info,
+  CheckCircle,
+  Warning,
+} from "@phosphor-icons/react";
 import * as api from "./api";
 import type { Trace, Event, Stats, AnalystReport } from "./api";
+import { fmtDuration, fmtCost, fmtTime, fmtTokenCount } from "./lib/format";
 
-const EVENT_EMOJI: Record<string, string> = {
-  "trace.start": "▶️",
-  "trace.end": "⏹️",
-  "llm.call": "🤖",
-  "tool.call": "🔧",
-  reasoning: "💭",
-  "memory.read": "📖",
-  "memory.write": "✏️",
-  decision: "🔀",
-  error: "❌",
-  retry: "🔁",
-  "human.input": "👤",
-};
+/* Standardized icon weight across the whole app (see Section 3.C of the taste skill). */
+const W = { weight: "bold" as const };
 
-function fmtDuration(ms: number | null | undefined): string {
-  if (!ms) return "—";
-  if (ms < 1000) return `${ms.toFixed(0)}ms`;
-  if (ms < 60000) return `${(ms / 1000).toFixed(2)}s`;
-  return `${(ms / 60000).toFixed(2)}min`;
-}
-
-function fmtCost(c: number | null | undefined): string {
-  if (!c) return "$0.00";
-  if (c < 0.01) return `$${c.toFixed(4)}`;
-  return `$${c.toFixed(2)}`;
-}
-
-function fmtTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleTimeString();
+/* Event type -> glyph + rail-color class. Replaces the old emoji map. */
+function eventVisual(eventType: string): { Icon: Icon; cls: string } {
+  switch (eventType) {
+    case "trace.start":
+      return { Icon: Play, cls: "" };
+    case "trace.end":
+      return { Icon: Stop, cls: "" };
+    case "llm.call":
+      return { Icon: Cpu, cls: "llm" };
+    case "tool.call":
+      return { Icon: Wrench, cls: "tool" };
+    case "reasoning":
+      return { Icon: Lightbulb, cls: "reasoning" };
+    case "memory.read":
+      return { Icon: BookOpen, cls: "" };
+    case "memory.write":
+      return { Icon: PencilSimple, cls: "" };
+    case "decision":
+      return { Icon: Path, cls: "" };
+    case "error":
+      return { Icon: XCircle, cls: "error" };
+    case "retry":
+      return { Icon: ArrowClockwise, cls: "" };
+    case "human.input":
+      return { Icon: User, cls: "" };
+    default:
+      return { Icon: Dot, cls: "" };
+  }
 }
 
 function eventClass(e: Event): string {
@@ -97,8 +128,8 @@ export default function App() {
     }
   }, [tab, selectedId, analyst]);
 
-  const filteredTraces = traces.filter((t) =>
-    !search || t.name.toLowerCase().includes(search.toLowerCase())
+  const filteredTraces = traces.filter(
+    (t) => !search || t.name.toLowerCase().includes(search.toLowerCase())
   );
 
   const setupClaudeCode = async () => {
@@ -115,10 +146,11 @@ export default function App() {
     <div className="app">
       <aside className="sidebar">
         <div className="sidebar-header">
-          <h1>🪄 VibeTrace</h1>
-          <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4 }}>
-            AI Agent observability
+          <div className="brand">
+            <Waveform size={22} {...W} />
+            <span className="brand-name">VibeTrace</span>
           </div>
+          <div className="brand-sub">AI Agent observability</div>
         </div>
 
         {stats && (
@@ -129,13 +161,19 @@ export default function App() {
             </div>
             <div className="metric">
               <div className="metric-label">Errors</div>
-              <div className="metric-value" style={{ color: stats.error_traces > 0 ? "var(--accent-red)" : undefined }}>
+              <div
+                className={`metric-value ${
+                  stats.error_traces > 0 ? "danger" : ""
+                }`}
+              >
                 {stats.error_traces}
               </div>
             </div>
             <div className="metric">
               <div className="metric-label">Tokens</div>
-              <div className="metric-value">{stats.total_tokens.toLocaleString()}</div>
+              <div className="metric-value">
+                {fmtTokenCount(stats.total_tokens)}
+              </div>
             </div>
             <div className="metric">
               <div className="metric-label">Cost</div>
@@ -146,27 +184,30 @@ export default function App() {
 
         <div className="sidebar-controls">
           <input
-            placeholder="🔍 search traces..."
+            placeholder="Search traces"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <div style={{ padding: "8px 16px", borderBottom: "1px solid var(--border)" }}>
-          <button className="primary" style={{ width: "100%" }} onClick={setupClaudeCode}>
-            ⚡ Setup Claude Code Hooks
+        <div className="setup-row">
+          <button className="primary" onClick={setupClaudeCode}>
+            <Plug size={15} {...W} />
+            Setup Claude Code Hooks
           </button>
           {setupStatus && (
-            <div style={{ fontSize: 11, marginTop: 6, color: "var(--accent-green)" }}>
-              ✅ {setupStatus}
+            <div className="setup-status">
+              <CheckCircle size={13} {...W} />
+              {setupStatus}
             </div>
           )}
         </div>
 
         <div className="trace-list">
           {filteredTraces.length === 0 ? (
-            <div style={{ padding: 24, textAlign: "center", color: "var(--text-secondary)", fontSize: 12 }}>
-              No traces yet.<br />
+            <div className="muted" style={{ padding: 24, textAlign: "center", fontSize: 12 }}>
+              No traces yet.
+              <br />
               Run an agent or click "Setup Claude Code Hooks" above.
             </div>
           ) : (
@@ -177,18 +218,40 @@ export default function App() {
                 onClick={() => setSelectedId(t.trace_id)}
               >
                 <div className="trace-name">
-                  <span className={t.status === "ok" ? "status-ok" : "status-error"}>
-                    {t.status === "ok" ? "✅" : "❌"}
-                  </span>
+                  {t.status === "ok" ? (
+                    <CheckCircle size={14} {...W} className="status-ok" />
+                  ) : (
+                    <XCircle size={14} {...W} className="status-error" />
+                  )}
                   {t.name}
                 </div>
-                {t.vibe && <span className="vibe-badge">🎨 {t.vibe}</span>}
+                {t.vibe && (
+                  <span className="vibe-badge">
+                    <PaintBrush size={11} {...W} />
+                    {t.vibe}
+                  </span>
+                )}
                 <div className="trace-meta">
-                  <span>⏱️ {fmtDuration(t.duration_ms)}</span>
-                  <span>🤖 {t.total_llm_calls}</span>
-                  <span>🔧 {t.total_tool_calls}</span>
-                  <span>💰 {fmtCost(t.total_cost_usd)}</span>
-                  <span>🕐 {fmtTime(t.start_time)}</span>
+                  <span className="meta-item">
+                    <Timer size={12} {...W} />
+                    {fmtDuration(t.duration_ms)}
+                  </span>
+                  <span className="meta-item">
+                    <Cpu size={12} {...W} />
+                    {t.total_llm_calls}
+                  </span>
+                  <span className="meta-item">
+                    <Wrench size={12} {...W} />
+                    {t.total_tool_calls}
+                  </span>
+                  <span className="meta-item">
+                    <Coins size={12} {...W} />
+                    {fmtCost(t.total_cost_usd)}
+                  </span>
+                  <span className="meta-item">
+                    <Clock size={12} {...W} />
+                    {fmtTime(t.start_time)}
+                  </span>
                 </div>
               </div>
             ))
@@ -199,15 +262,14 @@ export default function App() {
       <main className="main">
         {!selectedTrace ? (
           <div className="empty-state">
-            <div style={{ fontSize: 48 }}>🪄</div>
+            <Waveform size={60} {...W} className="empty-mark" />
             <h2>VibeTrace</h2>
-            <p>
-              Calm, insightful, minimalist observability for AI Agents.
-            </p>
-            <p style={{ fontSize: 12, maxWidth: 500, lineHeight: 1.6 }}>
-              Connect to Claude Code by clicking <strong>"Setup Claude Code Hooks"</strong> on the left.
-              Or run <code style={{ color: "var(--accent-purple)" }}>vibetrace demo</code> in your terminal
-              (the Python package) to populate traces.
+            <p>Calm, insightful, minimalist observability for AI Agents.</p>
+            <p className="hint">
+              Connect to Claude Code by clicking{" "}
+              <strong>"Setup Claude Code Hooks"</strong> on the left. Or run{" "}
+              <code>vibetrace demo</code> in your terminal (the Python package)
+              to populate traces.
             </p>
           </div>
         ) : (
@@ -215,24 +277,53 @@ export default function App() {
             <div className="detail-header">
               <div>
                 <div className="detail-title">
-                  {selectedTrace.status === "ok" ? "✅" : "❌"} {selectedTrace.name}
+                  {selectedTrace.status === "ok" ? (
+                    <CheckCircle size={18} {...W} className="status-ok" />
+                  ) : (
+                    <XCircle size={18} {...W} className="status-error" />
+                  )}
+                  {selectedTrace.name}
                 </div>
                 {selectedTrace.vibe && (
-                  <span className="vibe-badge" style={{ marginTop: 4, display: "inline-block" }}>
-                    🎨 {selectedTrace.vibe}
+                  <span
+                    className="vibe-badge"
+                    style={{ marginTop: 8, display: "inline-flex" }}
+                  >
+                    <PaintBrush size={11} {...W} />
+                    {selectedTrace.vibe}
                   </span>
                 )}
                 <div className="detail-stats">
-                  <span className="detail-stat">⏱️ <strong>{fmtDuration(selectedTrace.duration_ms)}</strong></span>
-                  <span className="detail-stat">📊 <strong>{selectedTrace.total_events}</strong> events</span>
-                  <span className="detail-stat">🤖 <strong>{selectedTrace.total_llm_calls}</strong> LLM</span>
-                  <span className="detail-stat">🔧 <strong>{selectedTrace.total_tool_calls}</strong> tools</span>
-                  <span className="detail-stat">📊 <strong>{selectedTrace.total_tokens.toLocaleString()}</strong> tokens</span>
-                  <span className="detail-stat">💰 <strong>{fmtCost(selectedTrace.total_cost_usd)}</strong></span>
+                  <span className="detail-stat">
+                    <Timer size={13} {...W} />
+                    <strong>{fmtDuration(selectedTrace.duration_ms)}</strong>
+                  </span>
+                  <span className="detail-stat">
+                    <ChartBar size={13} {...W} />
+                    <strong>{selectedTrace.total_events}</strong> events
+                  </span>
+                  <span className="detail-stat">
+                    <Cpu size={13} {...W} />
+                    <strong>{selectedTrace.total_llm_calls}</strong> LLM
+                  </span>
+                  <span className="detail-stat">
+                    <Wrench size={13} {...W} />
+                    <strong>{selectedTrace.total_tool_calls}</strong> tools
+                  </span>
+                  <span className="detail-stat">
+                    <Hash size={13} {...W} />
+                    <strong>{fmtTokenCount(selectedTrace.total_tokens)}</strong>{" "}
+                    tokens
+                  </span>
+                  <span className="detail-stat">
+                    <Coins size={13} {...W} />
+                    <strong>{fmtCost(selectedTrace.total_cost_usd)}</strong>
+                  </span>
                 </div>
                 {selectedTrace.error && (
-                  <div style={{ color: "var(--accent-red)", marginTop: 8, fontSize: 12 }}>
-                    ❌ {selectedTrace.error}
+                  <div className="detail-error">
+                    <XCircle size={13} {...W} />
+                    {selectedTrace.error}
                   </div>
                 )}
               </div>
@@ -246,32 +337,45 @@ export default function App() {
                   }
                 }}
               >
-                🗑 Delete
+                <Trash size={14} {...W} />
+                Delete
               </button>
             </div>
 
             <div className="tabs">
-              <div className={`tab ${tab === "timeline" ? "active" : ""}`} onClick={() => setTab("timeline")}>
-                ⏱️ Timeline
+              <div
+                className={`tab ${tab === "timeline" ? "active" : ""}`}
+                onClick={() => setTab("timeline")}
+              >
+                <Timer size={15} {...W} />
+                Timeline
               </div>
-              <div className={`tab ${tab === "graph" ? "active" : ""}`} onClick={() => setTab("graph")}>
-                🌳 Graph
+              <div
+                className={`tab ${tab === "graph" ? "active" : ""}`}
+                onClick={() => setTab("graph")}
+              >
+                <TreeStructure size={15} {...W} />
+                Graph
               </div>
-              <div className={`tab ${tab === "analyst" ? "active" : ""}`} onClick={() => setTab("analyst")}>
-                🧠 Analyst
+              <div
+                className={`tab ${tab === "analyst" ? "active" : ""}`}
+                onClick={() => setTab("analyst")}
+              >
+                <Brain size={15} {...W} />
+                Analyst
               </div>
-              <div className={`tab ${tab === "vibe" ? "active" : ""}`} onClick={() => setTab("vibe")}>
-                🎨 Vibe
+              <div
+                className={`tab ${tab === "vibe" ? "active" : ""}`}
+                onClick={() => setTab("vibe")}
+              >
+                <PaintBrush size={15} {...W} />
+                Vibe
               </div>
             </div>
 
             <div className="tab-content">
-              {tab === "timeline" && (
-                <TimelineView events={events} />
-              )}
-              {tab === "graph" && (
-                <GraphView events={events} />
-              )}
+              {tab === "timeline" && <TimelineView events={events} />}
+              {tab === "graph" && <GraphView events={events} />}
               {tab === "analyst" && (
                 <AnalystView report={analyst} traceId={selectedTrace.trace_id} />
               )}
@@ -286,53 +390,79 @@ export default function App() {
   );
 }
 
+function EventGlyph({ eventType, size = 14 }: { eventType: string; size?: number }) {
+  const { Icon, cls } = eventVisual(eventType);
+  return <Icon size={size} {...W} className={`event-ico ${cls}`} />;
+}
+
 function TimelineView({ events }: { events: Event[] }) {
   if (events.length === 0) {
-    return <div style={{ color: "var(--text-secondary)" }}>No events.</div>;
+    return <div className="muted">No events.</div>;
   }
   const baseTime = new Date(events[0].start_time).getTime();
   return (
     <div>
-      {events.map((e, i) => {
+      {events.map((e) => {
         const offset = new Date(e.start_time).getTime() - baseTime;
-        const emoji = EVENT_EMOJI[e.event_type] || "•";
         return (
           <div key={e.event_id} className={`event-card ${eventClass(e)}`}>
             <div className="event-header">
-              <span>{emoji}</span>
+              <EventGlyph eventType={e.event_type} />
               <span className="event-title">{e.event_type}</span>
-              <span style={{ color: "var(--text-secondary)" }}>· {e.name}</span>
-              {e.status === "error" && <span style={{ color: "var(--accent-red)" }}>❌</span>}
-              <span style={{ marginLeft: "auto" }} className="event-time">
+              <span className="event-name">· {e.name}</span>
+              {e.status === "error" && (
+                <XCircle size={13} {...W} className="status-error" />
+              )}
+              <span className="event-time">
                 +{offset}ms · {fmtDuration(e.duration_ms)}
               </span>
             </div>
             {(e.model || e.total_tokens || e.cost_usd) && (
               <div className="event-meta">
-                {e.model && <span>🤖 {e.model}</span>}
-                {e.total_tokens && <span>📊 {e.total_tokens} tokens</span>}
-                {e.cost_usd && <span>💰 {fmtCost(e.cost_usd)}</span>}
-                {e.tool_name && <span>🔧 {e.tool_name}</span>}
+                {e.model && (
+                  <span className="meta-item">
+                    <Cpu size={12} {...W} />
+                    {e.model}
+                  </span>
+                )}
+                {e.total_tokens && (
+                  <span className="meta-item">
+                    <Hash size={12} {...W} />
+                    {e.total_tokens} tokens
+                  </span>
+                )}
+                {e.cost_usd && (
+                  <span className="meta-item">
+                    <Coins size={12} {...W} />
+                    {fmtCost(e.cost_usd)}
+                  </span>
+                )}
+                {e.tool_name && (
+                  <span className="meta-item">
+                    <Wrench size={12} {...W} />
+                    {e.tool_name}
+                  </span>
+                )}
               </div>
             )}
             {(e.input || e.output || e.error) && (
-              <details style={{ marginTop: 8 }}>
-                <summary style={{ cursor: "pointer", fontSize: 11, color: "var(--text-secondary)" }}>
-                  Show details
-                </summary>
+              <details className="event-details">
+                <summary>Show details</summary>
                 {e.input && (
                   <div className="event-detail">
-                    <strong>Input:</strong> {JSON.stringify(e.input, null, 2).slice(0, 1000)}
+                    <span className="detail-label">Input:</span>{" "}
+                    {JSON.stringify(e.input, null, 2).slice(0, 1000)}
                   </div>
                 )}
                 {e.output && (
                   <div className="event-detail">
-                    <strong>Output:</strong> {JSON.stringify(e.output, null, 2).slice(0, 1000)}
+                    <span className="detail-label">Output:</span>{" "}
+                    {JSON.stringify(e.output, null, 2).slice(0, 1000)}
                   </div>
                 )}
                 {e.error && (
-                  <div className="event-detail" style={{ color: "var(--accent-red)" }}>
-                    <strong>Error:</strong> {e.error}
+                  <div className="event-detail is-error">
+                    <span className="detail-label">Error:</span> {e.error}
                   </div>
                 )}
               </details>
@@ -346,7 +476,7 @@ function TimelineView({ events }: { events: Event[] }) {
 
 function GraphView({ events }: { events: Event[] }) {
   if (events.length === 0) {
-    return <div style={{ color: "var(--text-secondary)" }}>No events.</div>;
+    return <div className="muted">No events.</div>;
   }
   const byParent: Record<string, Event[]> = {};
   const roots: Event[] = [];
@@ -361,11 +491,11 @@ function GraphView({ events }: { events: Event[] }) {
     const children = byParent[e.span_id] || [];
     return (
       <div key={e.event_id}>
-        <div style={{ paddingLeft: depth * 24, padding: "4px 0" }}>
-          <span>{EVENT_EMOJI[e.event_type] || "•"}</span>{" "}
-          <strong>{e.event_type}</strong>{" "}
-          <span style={{ color: "var(--text-secondary)" }}>· {e.name}</span>{" "}
-          <span style={{ color: "var(--text-secondary)", fontSize: 11 }}>{fmtDuration(e.duration_ms)}</span>
+        <div className="graph-node" style={{ paddingLeft: depth * 24 }}>
+          <EventGlyph eventType={e.event_type} size={13} />
+          <span className="graph-type">{e.event_type}</span>
+          <span className="graph-name">· {e.name}</span>
+          <span className="graph-dur">{fmtDuration(e.duration_ms)}</span>
         </div>
         {children.map((c) => renderNode(c, depth + 1))}
       </div>
@@ -374,30 +504,45 @@ function GraphView({ events }: { events: Event[] }) {
   return <div>{roots.map((r) => renderNode(r, 0))}</div>;
 }
 
-function AnalystView({ report, traceId }: { report: AnalystReport | null; traceId: string }) {
+function AnalystView({
+  report,
+  traceId,
+}: {
+  report: AnalystReport | null;
+  traceId: string;
+}) {
   if (!report) {
     return (
-      <div style={{ textAlign: "center", padding: 40, color: "var(--text-secondary)" }}>
-        🧠 Analyzing trace...
+      <div className="analyst-loading">
+        <Brain size={28} {...W} className="loading-ico" />
+        <span>Analyzing trace...</span>
       </div>
     );
   }
-  // Render markdown as plain text with simple line-by-line parsing
+  // Render markdown as plain text with simple line-by-line parsing.
   const lines = report.markdown.split("\n");
   return (
     <div className="analyst-report">
       {lines.map((line, i) => {
         if (line.startsWith("# ")) {
-          return <h1 key={i} style={{ background: "var(--gradient)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{line.slice(2)}</h1>;
+          return <h1 key={i}>{line.slice(2)}</h1>;
         }
         if (line.startsWith("## ")) {
           return <h2 key={i}>{line.slice(3)}</h2>;
         }
         if (line.startsWith("> ")) {
-          return <div key={i} style={{ borderLeft: "3px solid var(--accent-purple)", paddingLeft: 12, color: "var(--text-secondary)", fontStyle: "italic" }}>{line.slice(2)}</div>;
+          return (
+            <div key={i} className="quote">
+              {line.slice(2)}
+            </div>
+          );
         }
         if (line.startsWith("- ")) {
-          return <div key={i} style={{ paddingLeft: 8, margin: "4px 0" }}>• {line.slice(2)}</div>;
+          return (
+            <div key={i} className="bullet">
+              <span>{line.slice(2)}</span>
+            </div>
+          );
         }
         if (line.trim() === "") return <br key={i} />;
         return <div key={i}>{line}</div>;
@@ -408,11 +553,7 @@ function AnalystView({ report, traceId }: { report: AnalystReport | null; traceI
 
 function VibeView({ trace, events }: { trace: Trace; events: Event[] }) {
   if (!trace.vibe) {
-    return (
-      <div style={{ color: "var(--text-secondary)" }}>
-        No vibe set for this trace.
-      </div>
-    );
+    return <div className="muted">No vibe set for this trace.</div>;
   }
   const outputs = events
     .filter((e) => e.output)
@@ -421,33 +562,57 @@ function VibeView({ trace, events }: { trace: Trace; events: Event[] }) {
   const vl = trace.vibe.toLowerCase();
   const ol = outputs.toLowerCase();
   const findings: string[] = [];
-  if ((vl.includes("minimalist") || vl.includes("minimal") || vl.includes("简洁")) && outputs.length > 5000) {
-    findings.push("⚠️ Output very long (" + outputs.length + " chars), may violate 'minimalist' vibe");
+  if (
+    (vl.includes("minimalist") || vl.includes("minimal") || vl.includes("简洁")) &&
+    outputs.length > 5000
+  ) {
+    findings.push(
+      "Output very long (" + outputs.length + " chars), may violate 'minimalist' vibe"
+    );
   }
-  if ((vl.includes("calm") || vl.includes("平静")) && ["urgent", "panic", "asap", "crash", "崩溃"].some((w) => ol.includes(w))) {
-    findings.push("⚠️ Output contains panic/urgent words, conflicts with 'calm' vibe");
+  if (
+    (vl.includes("calm") || vl.includes("平静")) &&
+    ["urgent", "panic", "asap", "crash", "崩溃"].some((w) => ol.includes(w))
+  ) {
+    findings.push("Output contains panic/urgent words, conflicts with 'calm' vibe");
   }
-  if ((vl.includes("professional") || vl.includes("专业")) && ["lol", "haha", "omg", "嘿嘿"].some((w) => ol.includes(w))) {
-    findings.push("⚠️ Output contains informal words, conflicts with 'professional' vibe");
+  if (
+    (vl.includes("professional") || vl.includes("专业")) &&
+    ["lol", "haha", "omg", "嘿嘿"].some((w) => ol.includes(w))
+  ) {
+    findings.push("Output contains informal words, conflicts with 'professional' vibe");
   }
   return (
-    <div>
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 11, color: "var(--text-secondary)", marginBottom: 4 }}>
-          Original vibe
-        </div>
-        <span className="vibe-badge" style={{ fontSize: 14, padding: "6px 12px" }}>
-          🎨 {trace.vibe}
+    <div className="vibe-view">
+      <div className="vibe-origin">
+        <div className="vibe-label">Original vibe</div>
+        <span className="vibe-badge" style={{ fontSize: 14, padding: "5px 12px" }}>
+          <PaintBrush size={12} {...W} />
+          {trace.vibe}
         </span>
       </div>
-      <h2 style={{ color: "var(--accent-purple)", marginBottom: 12 }}>Vibe Deviation Check</h2>
-      {findings.length === 0 ? (
-        <div style={{ color: "var(--accent-green)" }}>✅ No obvious vibe deviation detected.</div>
-      ) : (
-        findings.map((f, i) => <div key={i} style={{ marginBottom: 6, color: "var(--accent-yellow)" }}>{f}</div>)
-      )}
-      <div style={{ marginTop: 24, padding: 12, background: "var(--bg-card)", borderRadius: 6, fontSize: 12, color: "var(--text-secondary)" }}>
-        💡 Vibe Check uses keyword heuristics. For deep LLM-powered analysis, set <code>ANTHROPIC_API_KEY</code> in the Python package and re-run.
+      <div>
+        <div className="vibe-heading">Vibe Deviation Check</div>
+        {findings.length === 0 ? (
+          <div className="vibe-ok">
+            <CheckCircle size={15} {...W} />
+            No obvious vibe deviation detected.
+          </div>
+        ) : (
+          findings.map((f, i) => (
+            <div key={i} className="vibe-finding">
+              <Warning size={14} {...W} />
+              {f}
+            </div>
+          ))
+        )}
+      </div>
+      <div className="vibe-note">
+        <Info size={14} {...W} />
+        <span>
+          Vibe Check uses keyword heuristics. For deep LLM-powered analysis, set{" "}
+          <code>ANTHROPIC_API_KEY</code> in the Python package and re-run.
+        </span>
       </div>
     </div>
   );

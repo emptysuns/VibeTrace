@@ -1,45 +1,46 @@
-# VibeTrace 🪄🔍
+# VibeTrace
 
-> **让 Agent 调试从"猜"变成"看 + AI 解释"**
->
-> 一套针对 AI Agent 的可观测性、调试与可靠性工具。
-> 直接针对 vibe coding 时代最顽固的痛点：**Observability + Reliability + Vibe 偏离检测**。
+[English](README.md) | [中文](README.zh-CN.md)
 
-## 🧩 包含的组件
+> Turn agent debugging from guessing into watching and AI-explained.
 
-| 组件 | 描述 | 技术栈 |
-|------|------|--------|
-| **[vibetrace (Python)](vibetrace/)** | 核心 Python 库: tracer, storage, analyst | Python 3.10+ |
-| **[vibetrace-desktop](vibetrace-desktop/)** | 桌面应用 + Claude Code 自动集成 | Tauri + Rust + React |
-| **vibetrace (CLI)** | 命令行工具 (Python 包附带) | Click |
-| **vibetrace dashboard** | Web dashboard (Python 包附带, Streamlit) | Streamlit |
+An observability, debugging, and reliability toolkit for AI agents. Built for the
+hardest problems of the vibe-coding era: observability, reliability, and vibe
+deviation detection.
 
-## 📸 截图 (vibetrace-desktop)
+## Components
 
-> 桌面应用提供时间线、Graph 视图、AI 分析师和 Vibe Check 面板,
-> 一键接入 Claude Code hooks, 自动捕获所有 agent 行为。
+| Component | Description | Stack |
+|----------|-------------|-------|
+| **[vibetrace (Python)](vibetrace/)** | Core library: tracer, storage, analyst | Python 3.10+, zero core deps |
+| **[vibetrace-desktop](vibetrace-desktop/)** | Desktop app with one-click Claude Code integration | Tauri + Rust + React |
+| **vibetrace (CLI)** | Command-line tool shipped with the Python package | argparse |
+| **vibetrace dashboard** | Web dashboard shipped with the Python package | Streamlit |
 
-## ✨ 核心特性
+## Features
 
-- 🪄 **一行接入** — `@trace_agent()` / `with trace(...):` / 自动 Claude Code hooks
-- 🌳 **完整轨迹** — LLM calls, tool calls, reasoning, memory, errors, retries, cost
-- 🧠 **AI Analyst** — 根因分析、模式检测、改进建议 (LLM + rule-based 双引擎)
-- 🎨 **Vibe Check** — 检测输出是否偏离原始 vibe (calm, minimalist, professional 等)
-- 🔁 **Loop Detection** — 自动发现无限循环 / 重复 reasoning
-- 🛡️ **Cost & Reliability Guards** — token / cost 统计、超阈值预警
-- 💾 **Local-first** — 全部数据存本地 SQLite, 无云依赖
-- 🖥️ **多端** — Web (Streamlit), Desktop (Tauri), CLI
+- **One-line instrumentation** - `@trace_agent()`, `with trace(...):`, or automatic Claude Code hooks
+- **Full traces** - LLM calls, tool calls, reasoning, memory, errors, retries, and cost
+- **AI Analyst** - root cause analysis, pattern detection, and suggestions (LLM plus rule-based)
+- **Vibe Check** - detect when output drifts from the intended vibe (calm, minimalist, professional, etc.)
+- **Loop Detection** - surface infinite loops and repeated reasoning automatically
+- **Cost and reliability guards** - token and cost accounting with threshold alerts
+- **Local-first** - all data stays in a local SQLite database, no cloud dependency
+- **Multiple surfaces** - web (Streamlit), desktop (Tauri), CLI
 
-## 🚀 快速开始
+## Quick start
 
-### 方式 A: 桌面应用 (推荐, 自动监控 Claude Code)
+### Option A: Desktop app (recommended, auto-monitors Claude Code)
 
-1. 下载 [最新 release](https://github.com/sakurairo/VibeTrace/releases)
-2. 启动 VibeTrace
-3. 点击侧栏 "⚡ Setup Claude Code Hooks"
-4. 像平时一样用 Claude Code —— 所有 prompt / tool call 都会被记录
+1. Download the [latest release](https://github.com/sakurairo/VibeTrace/releases)
+2. Launch VibeTrace
+3. Click "Setup Claude Code Hooks" in the sidebar
+4. Use Claude Code as usual - every prompt and tool call is recorded
 
-### 方式 B: Python 库
+### Option B: Python library
+
+The core library has zero dependencies (pure standard library), so instrumentation
+adds nothing to your dependency tree.
 
 ```bash
 pip install vibetrace
@@ -57,17 +58,19 @@ def my_agent(task: str) -> str:
 my_agent("Build a website")
 ```
 
-### 方式 C: CLI
+### Option C: CLI
 
 ```bash
-vibetrace demo           # 运行 demo agent
-vibetrace dashboard      # 启动 Web dashboard
-vibetrace list           # 列出 traces
-vibetrace show <id>      # 查看 trace 详情
-vibetrace analyze <id>   # AI 分析
+vibetrace demo           # run the demo agent
+vibetrace dashboard      # launch the web dashboard
+vibetrace list           # list recent traces
+vibetrace show <id>      # show trace details
+vibetrace stats          # show global statistics
+vibetrace analyze <id>   # run the analyst on a trace
+vibetrace clean          # delete all traces
 ```
 
-## 🏗️ 架构
+## Architecture
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -93,16 +96,22 @@ vibetrace analyze <id>   # AI 分析
        └─────────────┘      └─────────────┘
 ```
 
-## 🤖 Claude Code 集成细节
+- **Python core**: tracer (contextvars), SQLite storage, analyst (LLM plus rules)
+- **Desktop backend**: Rust, Tauri 2, axum (HTTP), rusqlite (bundled SQLite)
+- **Desktop frontend**: React, TypeScript, Vite
+- **Dashboard**: Streamlit
 
-桌面应用通过以下流程接入 Claude Code:
+## Claude Code integration
 
-1. **HTTP Server 启动** (port 7842)
-   - `POST /v1/traces` — 创建 trace
-   - `POST /v1/events` — 记录 event
-   - `POST /v1/traces/end` — 结束 trace
+The desktop app connects to Claude Code through this flow:
 
-2. **Hook 写入** `~/.claude/settings.json`:
+1. **HTTP server starts** on port 7842
+   - `POST /v1/traces` - create a trace
+   - `POST /v1/events` - record an event
+   - `POST /v1/events/finish` - finish an event
+   - `POST /v1/traces/end` - end a trace
+
+2. **Hooks are written** to `~/.claude/settings.json`:
    ```json
    {
      "hooks": {
@@ -113,34 +122,48 @@ vibetrace analyze <id>   # AI 分析
    }
    ```
 
-3. **每次你发送 prompt 给 Claude Code**, 它会自动调用 hook, 我们的 HTTP server 记录 trace 开始; **每个 tool 调用** 都会记录 event; **stop 时** 标记 trace 结束。
+3. **When you send a prompt** to Claude Code, the hook fires and the HTTP server
+   records the trace start. **Each tool call** records an event. **On stop**, the
+   trace is marked complete.
 
-4. **桌面应用** 每 3 秒轮询本地 SQLite, 实时显示新 trace。
+4. **The desktop app** polls the local SQLite database every 3 seconds and shows
+   new traces in real time.
 
-## 🗺️ 路线图
+## Optional dependencies
 
-- [x] Python 核心库 + Streamlit dashboard
-- [x] Tauri 桌面应用 + Claude Code 集成
-- [x] AI Analyst (LLM + rule-based)
-- [x] Vibe Check 面板
+The core library installs nothing extra. Add what you need:
+
+```bash
+pip install "vibetrace[dashboard]"   # Streamlit web dashboard
+pip install "vibetrace[anthropic]"   # Anthropic SDK auto-tracing
+pip install "vibetrace[openai]"      # OpenAI SDK auto-tracing
+pip install "vibetrace[all]"         # everything above
+```
+
+## Roadmap
+
+- [x] Python core library plus Streamlit dashboard
+- [x] Tauri desktop app plus Claude Code integration
+- [x] AI Analyst (LLM plus rule-based)
+- [x] Vibe Check panel
 - [x] Loop Detection
-- [ ] Vector memory (相似 trace 检索)
-- [ ] Replay UI (修改 prompt 重跑子树)
-- [ ] LangGraph / OpenAI 自动 hook
-- [ ] Export PDF 报告
-- [ ] Web 版本 (Vercel 部署)
+- [ ] Vector memory (similar-trace retrieval)
+- [ ] Replay UI (edit a prompt and re-run a subtree)
+- [ ] LangGraph and OpenAI auto-hooks
+- [ ] PDF report export
+- [ ] Web version (Vercel deployment)
 
-## 🛠️ 开发
+## Development
 
-### Python 包
+### Python package
 
 ```bash
 pip install -e ".[all]"
-python tests/test_tracer.py  # 8 tests
+python tests/test_tracer.py   # 8 tests
 vibetrace dashboard
 ```
 
-### 桌面应用
+### Desktop app
 
 ```bash
 cd vibetrace-desktop
@@ -148,16 +171,16 @@ npm install
 npm run tauri dev
 ```
 
-## 📦 发布流程
+## Release process
 
-1. 改 `vibetrace-desktop/src-tauri/Cargo.toml` 和 `vibetrace-desktop/package.json` 中的 version
+1. Bump the version in `vibetrace-desktop/src-tauri/Cargo.toml` and `vibetrace-desktop/package.json`
 2. `git tag v0.1.0 && git push --tags`
-3. GitHub Actions 自动 cross-platform build, 全部产物发布到 `Latest` release
+3. GitHub Actions cross-compiles for all platforms and publishes artifacts to the `Latest` release
 
-## 🪪 License
+## License
 
-MIT © VibeTrace Contributors
+MIT (c) VibeTrace Contributors
 
 ---
 
-*Built with vibe coding — calm, insightful, minimalist.*
+*Built with vibe coding - calm, insightful, minimalist.*

@@ -1,24 +1,24 @@
-# VibeTrace 使用指南 🪄🔍
+# VibeTrace 使用指南
 
 ## 三种使用方式
 
-### 1️⃣ 桌面应用 (自动监控 Claude Code)
+### 1. 桌面应用 (自动监控 Claude Code)
 
-**这是最推荐的方式** — 零配置，自动捕获你所有的 Claude Code 工作流。
+**这是最推荐的方式** - 零配置, 自动捕获你所有的 Claude Code 工作流。
 
 ```bash
 # 1. 下载并启动 VibeTrace.app / .exe / .AppImage
 # 2. 启动后, 它自动:
 #    - 监听 http://127.0.0.1:7842 (HTTP API)
 #    - 把数据存到 ~/Library/Application Support/dev.vibetrace.app/vibetrace.db
-# 3. 点击侧栏 "⚡ Setup Claude Code Hooks"
+# 3. 点击侧栏 "Setup Claude Code Hooks"
 #    - 自动修改 ~/.claude/settings.json
 #    - 配置 UserPromptSubmit / PostToolUse / Stop 三个 hook
 # 4. 像平时一样用 Claude Code
 # 5. 回到 VibeTrace 桌面应用看 traces (每 3 秒自动刷新)
 ```
 
-### 2️⃣ Python 库 (自定义 agent)
+### 2. Python 库 (自定义 agent)
 
 ```bash
 pip install vibetrace
@@ -49,13 +49,13 @@ with trace("my-agent", vibe="minimalist") as t:
     t.set_output(final_answer)
 ```
 
-然后跑 dashboard 看：
+然后跑 dashboard 看:
 ```bash
 vibetrace dashboard
 # 打开 http://localhost:8501
 ```
 
-### 3️⃣ 自动集成 (LangGraph / OpenAI / Anthropic)
+### 3. 自动集成 (LangGraph / OpenAI / Anthropic)
 
 ```python
 # 拦截 Anthropic SDK
@@ -67,26 +67,26 @@ patch()
 
 ## 常见场景
 
-### 🔍 场景 1: 调试失败的 Claude Code 任务
+### 场景 1: 调试失败的 Claude Code 任务
 
 1. 运行 VibeTrace 桌面应用
 2. Setup Claude Code Hooks
 3. 在 Claude Code 跑一个会失败的任务
-4. 回到 VibeTrace, 看到失败 trace (❌)
-5. 点 "🧠 Analyst" tab → 看根因分析
-6. 点 "🎨 Vibe" tab → 检查 vibe 偏离
+4. 回到 VibeTrace, 看到失败 trace
+5. 点 "Analyst" tab - 看根因分析
+6. 点 "Vibe" tab - 检查 vibe 偏离
 
-### 💰 场景 2: 监控 token / cost
+### 场景 2: 监控 token / cost
 
 1. 用 Python 库 + `@trace_agent` 装饰你的 agent
-2. 跑 `vibetrace stats` → 看总 cost / token
+2. 跑 `vibetrace stats` - 看总 cost / token
 3. 在 dashboard 看哪个 trace / event 花钱最多
 
-### 🔁 场景 3: 检测无限循环
+### 场景 3: 检测无限循环
 
 VibeTrace 自动检测 reasoning 重复 ≥3 次, 标记 `loop_detected` 事件。
 
-### 🎨 场景 4: Vibe Check (meta-debugging)
+### 场景 4: Vibe Check (meta-debugging)
 
 ```python
 with trace("ui-gen", vibe="calm, minimalist, generous whitespace"):
@@ -143,9 +143,7 @@ with trace("my-agent", vibe="pirate, dramatic, lots of exclamations!"):
     pass
 ```
 
-`★ Insight ─────────────────────────────────────`
 Vibe 是**任何自然语言描述**。VibeTrace 用关键词匹配做基础检测, 设置 `ANTHROPIC_API_KEY` 后会调用 LLM 做深度 vibe 偏离分析 (推荐)。
-`─────────────────────────────────────────────────`
 
 ## 故障排查
 
