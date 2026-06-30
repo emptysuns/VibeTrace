@@ -76,6 +76,19 @@ jobs:
         working-directory: vibetrace-desktop/src-tauri
         run: cargo fmt --all -- --check
 
+      - name: Setup Node (needed for tauri.conf.json)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install npm deps (needed for frontendDist)
+        working-directory: vibetrace-desktop
+        run: npm ci || npm install
+
+      - name: Build frontend (required for tauri build context)
+        working-directory: vibetrace-desktop
+        run: npm run build
+
       - name: Clippy (lib only)
         working-directory: vibetrace-desktop/src-tauri
         run: cargo clippy --lib -- -D warnings
