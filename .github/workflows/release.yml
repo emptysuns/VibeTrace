@@ -89,6 +89,8 @@ jobs:
           # Use tagName = "latest" so all builds contribute to the same "Latest" release
           tagName: latest
           releaseName: "VibeTrace (Latest)"
+          # tauri-action auto-detects src-tauri; our project uses a nested layout
+          projectPath: vibetrace-desktop
           releaseBody: |
             ## VibeTrace Desktop - Latest Build
 
