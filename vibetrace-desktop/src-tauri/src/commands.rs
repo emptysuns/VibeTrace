@@ -125,10 +125,7 @@ pub async fn record_event(
 }
 
 #[tauri::command]
-pub async fn delete_trace(
-    state: State<'_, AppState>,
-    trace_id: String,
-) -> Result<(), String> {
+pub async fn delete_trace(state: State<'_, AppState>, trace_id: String) -> Result<(), String> {
     state
         .store
         .delete_trace(&trace_id)
@@ -215,5 +212,8 @@ pub async fn init_claude_code_hooks(
     std::fs::write(&settings_path, serde_json::to_string_pretty(&json).unwrap())
         .map_err(|e| e.to_string())?;
 
-    Ok(format!("Configured Claude Code hooks in {}", settings_path.display()))
+    Ok(format!(
+        "Configured Claude Code hooks in {}",
+        settings_path.display()
+    ))
 }

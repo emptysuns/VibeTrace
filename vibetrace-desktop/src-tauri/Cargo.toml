@@ -1,6 +1,6 @@
 [package]
 name = "vibetrace-desktop"
-version = "0.1.0"
+version = "0.2.0"
 description = "VibeTrace - AI Agent observability desktop app"
 authors = ["VibeTrace Contributors"]
 license = "MIT"

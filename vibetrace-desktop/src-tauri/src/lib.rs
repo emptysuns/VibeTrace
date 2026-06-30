@@ -40,14 +40,16 @@ pub fn run() {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"))
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
 
     tauri::Builder::default()
         .setup(|app| {
             // Get app data dir
-            let app_data = app.path().app_data_dir()
+            let app_data = app
+                .path()
+                .app_data_dir()
                 .expect("Failed to get app data dir");
             std::fs::create_dir_all(&app_data).ok();
             let db_path = app_data.join("vibetrace.db");
