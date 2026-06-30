@@ -18,12 +18,11 @@ jobs:
       matrix:
         include:
           - platform: macos-latest
-            args: "--target universal-apple-darwin"
+            args: "--target aarch64-apple-darwin"
             artifact_glob: |
               src-tauri/target/**/bundle/dmg/*.dmg
               src-tauri/target/**/bundle/macos/*.app
-              src-tauri/target/**/bundle/macos-apple-silicon/*.app
-            artifact_name: VibeTrace-macOS-universal
+            artifact_name: VibeTrace-macOS-aarch64
           - platform: ubuntu-22.04
             args: ""
             artifact_glob: |
