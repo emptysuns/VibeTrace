@@ -1,11 +1,10 @@
 # Rust / Cargo
 /target
 **/*.rs.bk
-Cargo.lock
 
-# Tauri
+# Tauri - track Cargo.lock for application (reproducible builds)
 src-tauri/target
-src-tauri/Cargo.lock
+!src-tauri/Cargo.lock
 
 # Node
 node_modules/
