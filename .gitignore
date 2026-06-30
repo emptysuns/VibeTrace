@@ -1,0 +1,48 @@
+# Rust / Cargo
+/target
+**/*.rs.bk
+Cargo.lock
+
+# Tauri
+src-tauri/target
+src-tauri/Cargo.lock
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.local
+
+# Build artifacts
+*.app
+*.dmg
+*.exe
+*.deb
+*.rpm
+*.AppImage
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# Tauri generated
+src-tauri/gen/
+
+# VibeTrace local data
+vibetrace.db
+vibetrace.db-wal
+vibetrace.db-shm

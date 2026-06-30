@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vibetrace"
+version = "0.1.0"
+description = "🪄 VibeTrace - AI Agent observability, debugging & reliability toolkit. Calm, insightful, minimalist."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [
+    { name = "VibeTrace Contributors" }
+]
+keywords = ["ai-agent", "observability", "debugging", "tracing", "llm", "agent"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+# 核心依赖: 0 个！纯 stdlib 实现 (除了 integrations)
+dependencies = []
+
+[project.optional-dependencies]
+# Dashboard 需要 streamlit
+dashboard = [
+    "streamlit>=1.30.0",
+]
+# Anthropic 集成
+anthropic = [
+    "anthropic>=0.18.0",
+]
+# OpenAI 集成
+openai = [
+    "openai>=1.0.0",
+]
+# 全部
+all = [
+    "streamlit>=1.30.0",
+    "anthropic>=0.18.0",
+    "openai>=1.0.0",
+]
+# 开发依赖
+dev = [
+    "pytest>=7.0.0",
+    "streamlit>=1.30.0",
+    "anthropic>=0.18.0",
+]
+
+[project.scripts]
+vibetrace = "vibetrace.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/sakurairo/VibeTrace"
+Repository = "https://github.com/sakurairo/VibeTrace"
+Issues = "https://github.com/sakurairo/VibeTrace/issues"
+
+[tool.setuptools]
+packages = [
+    "vibetrace",
+    "vibetrace.core",
+    "vibetrace.storage",
+    "vibetrace.analyst",
+    "vibetrace.dashboard",
+    "vibetrace.integrations",
+]
+
+[tool.setuptools.package-data]
+vibetrace = ["py.typed"]
