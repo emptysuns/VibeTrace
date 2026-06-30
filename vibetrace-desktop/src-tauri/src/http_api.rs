@@ -4,7 +4,7 @@
 //! Claude Code 通过 settings.json hooks 配置, 每次 user prompt / tool use
 //! 都会 curl 这个 server, 自动记录到本地 SQLite.
 
-use crate::events::{Event, EventType};
+use crate::events::EventType;
 use crate::tracer::Tracer;
 use axum::{
     extract::{Json, State},

@@ -8,7 +8,9 @@
 
 use crate::events::{Event, EventStatus, EventType, Trace};
 use anyhow::{Context, Result};
+use chrono::{DateTime, Utc};
 use rusqlite::{params, Connection, OptionalExtension, Row};
+use serde::Serialize;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::Mutex;

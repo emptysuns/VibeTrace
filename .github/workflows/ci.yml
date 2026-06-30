@@ -45,10 +45,8 @@ jobs:
         run: npm run build
 
   rust-check:
-    name: Rust (format + clippy)
+    name: Rust (format + clippy + build)
     runs-on: ubuntu-latest
-    # MVP: 标记为继续-即使失败. 后续修复 Tauri 2 命令宏冲突
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -69,3 +67,7 @@ jobs:
       - name: Clippy
         working-directory: vibetrace-desktop/src-tauri
         run: cargo clippy --all-targets -- -D warnings
+
+      - name: Build (lib only, faster than full Tauri build)
+        working-directory: vibetrace-desktop/src-tauri
+        run: cargo build --lib

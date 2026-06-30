@@ -10,7 +10,6 @@ use anyhow::Result;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct ActiveEvent {
@@ -116,7 +115,7 @@ impl Tracer {
         self.store.save_trace(&trace.trace).await?;
 
         // Save trace.end event
-        let end_event = Event::new(EventType::TraceEnd, &trace.trace.name, &trace_id);
+        let end_event = Event::new(EventType::TraceEnd, trace.trace.name.clone(), trace_id);
         let _ = self.store.save_event(&end_event).await;
 
         Ok(())

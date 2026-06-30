@@ -220,14 +220,14 @@ pub fn analyze(t: &Trace, events: &[Event]) -> AnalystReport {
             };
             md.push_str(&format!("{} **{}**: {}\n", icon, p.kind, p.message));
         }
-        md.push_str("\n");
+        md.push('\n');
     }
     if !suggestions.is_empty() {
         md.push_str("## 改进建议\n");
         for s in &suggestions {
             md.push_str(&format!("- {}\n", s));
         }
-        md.push_str("\n");
+        md.push('\n');
     }
     if !t.vibe.is_empty() {
         md.push_str("## Vibe 偏离检测\n");
@@ -239,7 +239,7 @@ pub fn analyze(t: &Trace, events: &[Event]) -> AnalystReport {
                 md.push_str(&format!("- ⚠️ {}\n", d));
             }
         }
-        md.push_str("\n");
+        md.push('\n');
     }
 
     AnalystReport {

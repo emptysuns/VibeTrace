@@ -13,8 +13,6 @@ permissions:
 jobs:
   build-tauri:
     name: Build Tauri app (${{ matrix.platform }})
-    # MVP: 允许单个平台失败 (e.g. 临时编译问题)
-    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
