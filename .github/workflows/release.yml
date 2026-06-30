@@ -67,11 +67,17 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
+          cache-dependency-path: vibetrace-desktop/package-lock.json
 
       - name: Install npm deps
+        working-directory: vibetrace-desktop
         run: npm ci || npm install
+
+      - name: Build frontend (required for tauri)
+        working-directory: vibetrace-desktop
+        run: npm run build
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
