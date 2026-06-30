@@ -116,7 +116,11 @@ pub struct Event {
 }
 
 impl Event {
-    pub fn new(event_type: EventType, name: impl Into<String>, trace_id: impl Into<String>) -> Self {
+    pub fn new(
+        event_type: EventType,
+        name: impl Into<String>,
+        trace_id: impl Into<String>,
+    ) -> Self {
         Self {
             event_id: Uuid::new_v4().to_string()[..16].to_string(),
             trace_id: trace_id.into(),
@@ -144,9 +148,8 @@ impl Event {
 
     pub fn finish(&mut self, status: EventStatus) {
         self.end_time = Some(Utc::now());
-        self.duration_ms = Some(
-            (self.end_time.unwrap() - self.start_time).num_milliseconds() as f64
-        );
+        self.duration_ms =
+            Some((self.end_time.unwrap() - self.start_time).num_milliseconds() as f64);
         // 关键: 不要覆盖已经设置的 ERROR 状态
         if !(self.status == EventStatus::Error && self.error.is_some()) {
             self.status = status;
@@ -208,9 +211,8 @@ impl Trace {
 
     pub fn finish(&mut self, status: EventStatus) {
         self.end_time = Some(Utc::now());
-        self.duration_ms = Some(
-            (self.end_time.unwrap() - self.start_time).num_milliseconds() as f64
-        );
+        self.duration_ms =
+            Some((self.end_time.unwrap() - self.start_time).num_milliseconds() as f64);
         self.status = status;
     }
 }

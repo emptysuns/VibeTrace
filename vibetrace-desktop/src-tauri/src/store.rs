@@ -127,9 +127,7 @@ impl Store {
         let conn = self.conn.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<Trace>> {
             let conn = conn.blocking_lock();
-            let mut stmt = conn.prepare(
-                "SELECT * FROM traces ORDER BY start_time DESC LIMIT ?"
-            )?;
+            let mut stmt = conn.prepare("SELECT * FROM traces ORDER BY start_time DESC LIMIT ?")?;
             let rows = stmt.query_map(params![limit as i64], row_to_trace)?;
             rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
         })
@@ -158,7 +156,7 @@ impl Store {
         tokio::task::spawn_blocking(move || -> Result<Vec<Event>> {
             let conn = conn.blocking_lock();
             let mut stmt = conn.prepare(
-                "SELECT * FROM events WHERE trace_id = ? ORDER BY start_time ASC, event_id ASC"
+                "SELECT * FROM events WHERE trace_id = ? ORDER BY start_time ASC, event_id ASC",
             )?;
             let rows = stmt.query_map(params![trace_id], row_to_event)?;
             rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
@@ -183,15 +181,17 @@ impl Store {
                 FROM traces
                 "#,
                 [],
-                |r| Ok(Stats {
-                    total_traces: r.get(0)?,
-                    error_traces: r.get::<_, Option<i64>>(1)?.unwrap_or(0),
-                    total_tokens: r.get(2)?,
-                    total_cost_usd: r.get(3)?,
-                    total_llm_calls: r.get(4)?,
-                    total_tool_calls: r.get(5)?,
-                    avg_duration_ms: r.get(6)?,
-                }),
+                |r| {
+                    Ok(Stats {
+                        total_traces: r.get(0)?,
+                        error_traces: r.get::<_, Option<i64>>(1)?.unwrap_or(0),
+                        total_tokens: r.get(2)?,
+                        total_cost_usd: r.get(3)?,
+                        total_llm_calls: r.get(4)?,
+                        total_tool_calls: r.get(5)?,
+                        avg_duration_ms: r.get(6)?,
+                    })
+                },
             )?;
             Ok(row)
         })
@@ -256,8 +256,16 @@ pub struct Stats {
 // === Sync helpers ===
 
 fn save_event_sync(conn: &Connection, event: &Event) -> Result<()> {
-    let input_json = event.input.as_ref().map(|v| v.to_string()).unwrap_or_default();
-    let output_json = event.output.as_ref().map(|v| v.to_string()).unwrap_or_default();
+    let input_json = event
+        .input
+        .as_ref()
+        .map(|v| v.to_string())
+        .unwrap_or_default();
+    let output_json = event
+        .output
+        .as_ref()
+        .map(|v| v.to_string())
+        .unwrap_or_default();
     let metadata_json = serde_json::to_string(&event.metadata)?;
     let tags_json = serde_json::to_string(&event.tags)?;
 
@@ -283,13 +291,27 @@ fn save_event_sync(conn: &Connection, event: &Event) -> Result<()> {
             WHERE event_id = ?21
             "#,
             params![
-                event.trace_id, event.parent_id, event.span_id, event.event_type.as_str(),
-                event.name, event.status.as_str(), event.start_time.to_rfc3339(),
-                event.end_time.map(|t| t.to_rfc3339()), event.duration_ms,
-                input_json, output_json, event.error,
-                event.model, event.prompt_tokens, event.completion_tokens,
-                event.total_tokens, event.cost_usd, event.tool_name,
-                metadata_json, tags_json, event.event_id,
+                event.trace_id,
+                event.parent_id,
+                event.span_id,
+                event.event_type.as_str(),
+                event.name,
+                event.status.as_str(),
+                event.start_time.to_rfc3339(),
+                event.end_time.map(|t| t.to_rfc3339()),
+                event.duration_ms,
+                input_json,
+                output_json,
+                event.error,
+                event.model,
+                event.prompt_tokens,
+                event.completion_tokens,
+                event.total_tokens,
+                event.cost_usd,
+                event.tool_name,
+                metadata_json,
+                tags_json,
+                event.event_id,
             ],
         )?;
     } else {
@@ -304,14 +326,27 @@ fn save_event_sync(conn: &Connection, event: &Event) -> Result<()> {
                       ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21)
             "#,
             params![
-                event.event_id, event.trace_id, event.parent_id, event.span_id,
-                event.event_type.as_str(), event.name, event.status.as_str(),
+                event.event_id,
+                event.trace_id,
+                event.parent_id,
+                event.span_id,
+                event.event_type.as_str(),
+                event.name,
+                event.status.as_str(),
                 event.start_time.to_rfc3339(),
-                event.end_time.map(|t| t.to_rfc3339()), event.duration_ms,
-                input_json, output_json, event.error,
-                event.model, event.prompt_tokens, event.completion_tokens,
-                event.total_tokens, event.cost_usd, event.tool_name,
-                metadata_json, tags_json,
+                event.end_time.map(|t| t.to_rfc3339()),
+                event.duration_ms,
+                input_json,
+                output_json,
+                event.error,
+                event.model,
+                event.prompt_tokens,
+                event.completion_tokens,
+                event.total_tokens,
+                event.cost_usd,
+                event.tool_name,
+                metadata_json,
+                tags_json,
             ],
         )?;
     }
@@ -319,8 +354,16 @@ fn save_event_sync(conn: &Connection, event: &Event) -> Result<()> {
 }
 
 fn save_trace_sync(conn: &Connection, trace: &Trace) -> Result<()> {
-    let input_json = trace.input.as_ref().map(|v| v.to_string()).unwrap_or_default();
-    let output_json = trace.output.as_ref().map(|v| v.to_string()).unwrap_or_default();
+    let input_json = trace
+        .input
+        .as_ref()
+        .map(|v| v.to_string())
+        .unwrap_or_default();
+    let output_json = trace
+        .output
+        .as_ref()
+        .map(|v| v.to_string())
+        .unwrap_or_default();
     let metadata_json = serde_json::to_string(&trace.metadata)?;
     let tags_json = serde_json::to_string(&trace.tags)?;
 
@@ -344,12 +387,24 @@ fn save_trace_sync(conn: &Connection, trace: &Trace) -> Result<()> {
             WHERE trace_id = ?18
             "#,
             params![
-                trace.name, trace.vibe, trace.start_time.to_rfc3339(),
-                trace.end_time.map(|t| t.to_rfc3339()), trace.duration_ms,
-                trace.status.as_str(), trace.error, input_json, output_json,
-                trace.total_events, trace.total_llm_calls, trace.total_tool_calls,
-                trace.total_tokens, trace.total_cost_usd, trace.error_count,
-                metadata_json, tags_json, trace.trace_id,
+                trace.name,
+                trace.vibe,
+                trace.start_time.to_rfc3339(),
+                trace.end_time.map(|t| t.to_rfc3339()),
+                trace.duration_ms,
+                trace.status.as_str(),
+                trace.error,
+                input_json,
+                output_json,
+                trace.total_events,
+                trace.total_llm_calls,
+                trace.total_tool_calls,
+                trace.total_tokens,
+                trace.total_cost_usd,
+                trace.error_count,
+                metadata_json,
+                tags_json,
+                trace.trace_id,
             ],
         )?;
     } else {
@@ -364,12 +419,24 @@ fn save_trace_sync(conn: &Connection, trace: &Trace) -> Result<()> {
                       ?14, ?15, ?16, ?17, ?18)
             "#,
             params![
-                trace.trace_id, trace.name, trace.vibe, trace.start_time.to_rfc3339(),
-                trace.end_time.map(|t| t.to_rfc3339()), trace.duration_ms,
-                trace.status.as_str(), trace.error, input_json, output_json,
-                trace.total_events, trace.total_llm_calls, trace.total_tool_calls,
-                trace.total_tokens, trace.total_cost_usd, trace.error_count,
-                metadata_json, tags_json,
+                trace.trace_id,
+                trace.name,
+                trace.vibe,
+                trace.start_time.to_rfc3339(),
+                trace.end_time.map(|t| t.to_rfc3339()),
+                trace.duration_ms,
+                trace.status.as_str(),
+                trace.error,
+                input_json,
+                output_json,
+                trace.total_events,
+                trace.total_llm_calls,
+                trace.total_tool_calls,
+                trace.total_tokens,
+                trace.total_cost_usd,
+                trace.error_count,
+                metadata_json,
+                tags_json,
             ],
         )?;
     }
@@ -413,8 +480,12 @@ fn row_to_trace(row: &Row) -> rusqlite::Result<Trace> {
         total_tokens: total_tokens as u32,
         total_cost_usd,
         error_count: error_count as u32,
-        metadata: parse_json(&metadata_str).and_then(|v| serde_json::from_value(v).ok()).unwrap_or_default(),
-        tags: parse_json(&tags_str).and_then(|v| serde_json::from_value(v).ok()).unwrap_or_default(),
+        metadata: parse_json(&metadata_str)
+            .and_then(|v| serde_json::from_value(v).ok())
+            .unwrap_or_default(),
+        tags: parse_json(&tags_str)
+            .and_then(|v| serde_json::from_value(v).ok())
+            .unwrap_or_default(),
     })
 }
 
@@ -461,8 +532,12 @@ fn row_to_event(row: &Row) -> rusqlite::Result<Event> {
         total_tokens: total_tokens.map(|n| n as u32),
         cost_usd,
         tool_name,
-        metadata: parse_json(&metadata_str).and_then(|v| serde_json::from_value(v).ok()).unwrap_or_default(),
-        tags: parse_json(&tags_str).and_then(|v| serde_json::from_value(v).ok()).unwrap_or_default(),
+        metadata: parse_json(&metadata_str)
+            .and_then(|v| serde_json::from_value(v).ok())
+            .unwrap_or_default(),
+        tags: parse_json(&tags_str)
+            .and_then(|v| serde_json::from_value(v).ok())
+            .unwrap_or_default(),
     })
 }
 
@@ -473,7 +548,9 @@ fn parse_dt(s: &str) -> DateTime<Utc> {
 }
 
 fn parse_json(s: &str) -> Option<serde_json::Value> {
-    if s.is_empty() { return None; }
+    if s.is_empty() {
+        return None;
+    }
     serde_json::from_str(s).ok()
 }
 

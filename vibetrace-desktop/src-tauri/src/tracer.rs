@@ -104,7 +104,9 @@ impl Tracer {
 
     pub async fn end_trace(&self, trace_id: &str, output: Option<serde_json::Value>) -> Result<()> {
         let mut traces = self.active_traces.lock().await;
-        let pos = traces.iter().position(|t| t.trace.trace_id == trace_id)
+        let pos = traces
+            .iter()
+            .position(|t| t.trace.trace_id == trace_id)
             .ok_or_else(|| anyhow::anyhow!("Trace {} not found", trace_id))?;
 
         let mut trace = traces.remove(pos);
@@ -134,9 +136,12 @@ impl Tracer {
             Some(id) => id.to_string(),
             None => {
                 let traces = self.active_traces.lock().await;
-                traces.last()
+                traces
+                    .last()
                     .ok_or_else(|| anyhow::anyhow!("No active trace"))?
-                    .trace.trace_id.clone()
+                    .trace
+                    .trace_id
+                    .clone()
             }
         };
 
@@ -156,12 +161,19 @@ impl Tracer {
             if let Some(serde_json::Value::String(s)) = &event.input {
                 let sig: String = s.chars().take(200).collect();
                 let mut traces = self.active_traces.lock().await;
-                if let Some(at) = traces.iter_mut().find(|t| t.trace.trace_id == target_trace_id) {
+                if let Some(at) = traces
+                    .iter_mut()
+                    .find(|t| t.trace.trace_id == target_trace_id)
+                {
                     let count = at.loop_counter.entry(sig.clone()).or_insert(0);
                     *count += 1;
                     if *count >= self.loop_threshold {
-                        event.metadata.insert("loop_detected".to_string(), serde_json::json!(true));
-                        event.metadata.insert("loop_count".to_string(), serde_json::json!(*count));
+                        event
+                            .metadata
+                            .insert("loop_detected".to_string(), serde_json::json!(true));
+                        event
+                            .metadata
+                            .insert("loop_count".to_string(), serde_json::json!(*count));
                     }
                 }
             }
@@ -173,7 +185,10 @@ impl Tracer {
                 event.model = Some(model.to_string());
                 if let (Some(p), Some(c)) = (
                     event.metadata.get("prompt_tokens").and_then(|v| v.as_u64()),
-                    event.metadata.get("completion_tokens").and_then(|v| v.as_u64()),
+                    event
+                        .metadata
+                        .get("completion_tokens")
+                        .and_then(|v| v.as_u64()),
                 ) {
                     event.prompt_tokens = Some(p as u32);
                     event.completion_tokens = Some(c as u32);
@@ -196,7 +211,10 @@ impl Tracer {
         // Add to active trace
         {
             let mut traces = self.active_traces.lock().await;
-            if let Some(at) = traces.iter_mut().find(|t| t.trace.trace_id == target_trace_id) {
+            if let Some(at) = traces
+                .iter_mut()
+                .find(|t| t.trace.trace_id == target_trace_id)
+            {
                 at.add_event(event.clone());
                 // Persist updated stats
                 let _ = self.store.save_trace(&at.trace).await;

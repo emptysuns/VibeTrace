@@ -72,9 +72,7 @@ pub async fn get_events(
 }
 
 #[tauri::command]
-pub async fn get_stats(
-    state: tauri::State<'_, AppState>,
-) -> Result<store::Stats, String> {
+pub async fn get_stats(state: tauri::State<'_, AppState>) -> Result<store::Stats, String> {
     state.store.get_stats().await.map_err(|e| e.to_string())
 }
 
@@ -96,7 +94,10 @@ pub async fn analyze_trace(
         .map_err(|e| e.to_string())?;
     let report = analyst::analyze(&trace, &events);
     // Save markdown to storage
-    let _ = state.store.save_analyst_report(&trace_id, &report.markdown).await;
+    let _ = state
+        .store
+        .save_analyst_report(&trace_id, &report.markdown)
+        .await;
     Ok(report)
 }
 
@@ -155,7 +156,11 @@ pub async fn delete_trace(
     state: tauri::State<'_, AppState>,
     trace_id: String,
 ) -> Result<(), String> {
-    state.store.delete_trace(&trace_id).await.map_err(|e| e.to_string())
+    state
+        .store
+        .delete_trace(&trace_id)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -197,8 +202,23 @@ pub async fn init_claude_code_hooks(
     state: tauri::State<'_, AppState>,
     port: u16,
 ) -> Result<String, String> {
-    // Make sure HTTP server is running
-    start_http_server(app.clone(), state, Some(port)).await?;
+    // Make sure HTTP server is running (inline to avoid macro double-registration)
+    {
+        let mut handle = state.http_handle.lock().await;
+        if handle.is_none() {
+            let addr: std::net::SocketAddr = format!("127.0.0.1:{}", port).parse().unwrap();
+            let tracer = state.tracer.clone();
+            let h = tokio::spawn(async move {
+                if let Err(e) = http_api::start_server(addr, tracer).await {
+                    tracing::error!("HTTP server error: {}", e);
+                }
+            });
+            *handle = Some(h);
+            tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+            *state.http_port.lock().await = port;
+        }
+    }
+    let _ = app; // silence unused warning
 
     // Get Claude Code settings.json path
     let home = dirs::home_dir().ok_or("No home dir")?;
@@ -207,16 +227,17 @@ pub async fn init_claude_code_hooks(
     let settings = if settings_path.exists() {
         std::fs::read_to_string(&settings_path).unwrap_or_else(|_| "{}".to_string())
     } else {
-        std::fs::create_dir_all(settings_path.parent().unwrap())
-            .map_err(|e| e.to_string())?;
+        std::fs::create_dir_all(settings_path.parent().unwrap()).map_err(|e| e.to_string())?;
         "{}".to_string()
     };
 
-    let mut json: serde_json::Value = serde_json::from_str(&settings)
-        .unwrap_or_else(|_| serde_json::json!({}));
+    let mut json: serde_json::Value =
+        serde_json::from_str(&settings).unwrap_or_else(|_| serde_json::json!({}));
 
     let base = format!("http://127.0.0.1:{}", port);
-    let hooks = json.as_object_mut().unwrap()
+    let hooks = json
+        .as_object_mut()
+        .unwrap()
         .entry("hooks".to_string())
         .or_insert(serde_json::json!({}));
 
@@ -256,7 +277,10 @@ pub async fn init_claude_code_hooks(
     std::fs::write(&settings_path, serde_json::to_string_pretty(&json).unwrap())
         .map_err(|e| e.to_string())?;
 
-    Ok(format!("Configured Claude Code hooks in {}", settings_path.display()))
+    Ok(format!(
+        "Configured Claude Code hooks in {}",
+        settings_path.display()
+    ))
 }
 
 /// Tauri app entrypoint
@@ -265,14 +289,16 @@ pub fn run() {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"))
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
 
     tauri::Builder::default()
         .setup(|app| {
             // Get app data dir
-            let app_data = app.path().app_data_dir()
+            let app_data = app
+                .path()
+                .app_data_dir()
                 .expect("Failed to get app data dir");
             std::fs::create_dir_all(&app_data).ok();
             let db_path = app_data.join("vibetrace.db");

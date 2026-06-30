@@ -26,7 +26,11 @@ pub struct PatternFinding {
 pub fn analyze(t: &Trace, events: &[Event]) -> AnalystReport {
     let summary = format!(
         "{} **{}** ({}ms, {} events, ${:.4}, {} tokens){}",
-        if t.status == EventStatus::Ok { "✅" } else { "❌" },
+        if t.status == EventStatus::Ok {
+            "✅"
+        } else {
+            "❌"
+        },
         t.name,
         t.duration_ms.map(|d| d as u64).unwrap_or(0),
         t.total_events,
@@ -43,14 +47,24 @@ pub fn analyze(t: &Trace, events: &[Event]) -> AnalystReport {
     let root_cause = events
         .iter()
         .find(|e| e.status == EventStatus::Error)
-        .map(|e| format!("首个错误: `{}` ({})\n> {}", e.name, e.event_type.as_str(), e.error.clone().unwrap_or_default()));
+        .map(|e| {
+            format!(
+                "首个错误: `{}` ({})\n> {}",
+                e.name,
+                e.event_type.as_str(),
+                e.error.clone().unwrap_or_default()
+            )
+        });
 
     // 模式检测
     let mut patterns = Vec::new();
 
     // Loop detection
     let mut counter: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
-    for e in events.iter().filter(|e| e.event_type == EventType::Reasoning) {
+    for e in events
+        .iter()
+        .filter(|e| e.event_type == EventType::Reasoning)
+    {
         if let Some(serde_json::Value::String(s)) = &e.input {
             let sig: String = s.chars().take(100).collect();
             if !sig.is_empty() {
@@ -68,28 +82,44 @@ pub fn analyze(t: &Trace, events: &[Event]) -> AnalystReport {
     }
 
     // Cost hotspot
-    if let Some(top) = events.iter()
+    if let Some(top) = events
+        .iter()
         .filter(|e| e.event_type == EventType::LlmCall && e.cost_usd.is_some())
-        .max_by(|a, b| a.cost_usd.partial_cmp(&b.cost_usd).unwrap_or(std::cmp::Ordering::Equal))
+        .max_by(|a, b| {
+            a.cost_usd
+                .partial_cmp(&b.cost_usd)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
     {
         patterns.push(PatternFinding {
             kind: "cost".into(),
             message: format!(
                 "Cost hotspot: `{}` 花费 ${:.4} ({} tokens)",
-                top.name, top.cost_usd.unwrap_or(0.0), top.total_tokens.unwrap_or(0)
+                top.name,
+                top.cost_usd.unwrap_or(0.0),
+                top.total_tokens.unwrap_or(0)
             ),
             severity: "medium".into(),
         });
     }
 
     // Slow step
-    if let Some(top) = events.iter()
+    if let Some(top) = events
+        .iter()
         .filter(|e| e.duration_ms.is_some() && e.duration_ms.unwrap() > 100.0)
-        .max_by(|a, b| a.duration_ms.partial_cmp(&b.duration_ms).unwrap_or(std::cmp::Ordering::Equal))
+        .max_by(|a, b| {
+            a.duration_ms
+                .partial_cmp(&b.duration_ms)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
     {
         patterns.push(PatternFinding {
             kind: "slow".into(),
-            message: format!("Slow step: `{}` 耗时 {}ms", top.name, top.duration_ms.unwrap() as u64),
+            message: format!(
+                "Slow step: `{}` 耗时 {}ms",
+                top.name,
+                top.duration_ms.unwrap() as u64
+            ),
             severity: "low".into(),
         });
     }
@@ -99,8 +129,15 @@ pub fn analyze(t: &Trace, events: &[Event]) -> AnalystReport {
         let rate = t.error_count as f64 / t.total_events.max(1) as f64 * 100.0;
         patterns.push(PatternFinding {
             kind: "error_rate".into(),
-            message: format!("Error rate: {}/{} = {:.1}%", t.error_count, t.total_events, rate),
-            severity: if rate > 20.0 { "high".into() } else { "medium".into() },
+            message: format!(
+                "Error rate: {}/{} = {:.1}%",
+                t.error_count, t.total_events, rate
+            ),
+            severity: if rate > 20.0 {
+                "high".into()
+            } else {
+                "medium".into()
+            },
         });
     }
 
@@ -111,14 +148,20 @@ pub fn analyze(t: &Trace, events: &[Event]) -> AnalystReport {
         suggestions.push("🧠 在 prompt 中加 '如发现重复, 改变策略' 指令".into());
     }
     if t.total_cost_usd > 1.0 {
-        suggestions.push(format!("💰 单次 trace 成本 ${:.2} 偏高, 考虑用更便宜 model 或减少 LLM 次数", t.total_cost_usd));
+        suggestions.push(format!(
+            "💰 单次 trace 成本 ${:.2} 偏高, 考虑用更便宜 model 或减少 LLM 次数",
+            t.total_cost_usd
+        ));
     }
     if t.error_count > 0 {
         suggestions.push("🛡️ 添加 retry + fallback (exponential backoff)".into());
         suggestions.push("📋 给 tool call 加 JSON schema, 让 LLM 输出更可预测".into());
     }
     if t.total_llm_calls > 10 {
-        suggestions.push(format!("🤖 调了 {} 次 LLM, 考虑 batch 多个 sub-task", t.total_llm_calls));
+        suggestions.push(format!(
+            "🤖 调了 {} 次 LLM, 考虑 batch 多个 sub-task",
+            t.total_llm_calls
+        ));
     }
     if suggestions.is_empty() {
         suggestions.push("✨ 看起来很健康, 持续监控即可".into());
@@ -127,7 +170,8 @@ pub fn analyze(t: &Trace, events: &[Event]) -> AnalystReport {
     // Vibe 偏离
     let mut vibe_deviation = Vec::new();
     if !t.vibe.is_empty() {
-        let outputs: String = events.iter()
+        let outputs: String = events
+            .iter()
             .filter_map(|e| e.output.as_ref().map(|v| v.to_string()))
             .collect::<Vec<_>>()
             .join(" ");
@@ -140,13 +184,15 @@ pub fn analyze(t: &Trace, events: &[Event]) -> AnalystReport {
         }
         if (vl.contains("calm") || vl.contains("平静"))
             && ["urgent", "panic", "asap", "crash", "崩溃", "急"]
-                .iter().any(|w| outputs.to_lowercase().contains(w))
+                .iter()
+                .any(|w| outputs.to_lowercase().contains(w))
         {
             vibe_deviation.push("输出含 panic/urgent 词汇, 与 'calm' vibe 冲突".into());
         }
         if (vl.contains("professional") || vl.contains("专业"))
             && ["lol", "haha", "omg", "嘿嘿", "yeah"]
-                .iter().any(|w| outputs.to_lowercase().contains(w))
+                .iter()
+                .any(|w| outputs.to_lowercase().contains(w))
         {
             vibe_deviation.push("输出含非正式词汇, 与 'professional' vibe 冲突".into());
         }
