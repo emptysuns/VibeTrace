@@ -64,9 +64,9 @@ jobs:
         working-directory: vibetrace-desktop/src-tauri
         run: cargo fmt --all -- --check
 
-      - name: Clippy
+      - name: Clippy (lib only, avoids needing webkit2gtk system deps)
         working-directory: vibetrace-desktop/src-tauri
-        run: cargo clippy --all-targets -- -D warnings
+        run: cargo clippy --lib -- -D warnings
 
       - name: Build (lib only, faster than full Tauri build)
         working-directory: vibetrace-desktop/src-tauri
