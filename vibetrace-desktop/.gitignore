@@ -5,7 +5,7 @@ Cargo.lock
 
 # Tauri
 src-tauri/target
-src-tauri/Cargo.lock
+!src-tauri/Cargo.lock
 
 # Node
 node_modules/
